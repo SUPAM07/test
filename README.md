@@ -76,3 +76,46 @@ I build real-world SaaS apps, AI systems, automation platforms, and production-g
 
 🔔 Subscribe here:
 👉 [https://tinyurl.com/subcribe-to-techwithEmma](https://tinyurl.com/subcribe-to-techwithEmma)
+
+---
+
+## Phase 1 Migration Scaffold (Node+Express + React)
+
+The existing Next.js app remains intact. A new split architecture scaffold was added under:
+
+- `apps/server` - Node.js + Express + TypeScript API (`http://localhost:4000`)
+- `apps/client` - React + TypeScript (Vite) frontend (`http://localhost:5173`)
+
+### Run both new apps in development
+
+```bash
+npm install
+npm run dev:apps
+```
+
+### Run each app independently
+
+```bash
+# Server
+npm run dev:server
+
+# Client
+npm run dev:client
+```
+
+### Build apps
+
+```bash
+# Build server + client
+npm run build:apps
+
+# Build Next.js + server + client
+npm run build:all
+```
+
+### Dev environment notes
+
+- Server default port: `4000` (`PORT` env var can override)
+- Client default port: `5173`
+- Server CORS origin defaults to `http://localhost:5173` (`CLIENT_ORIGIN` env var can override)
+- Client health check endpoint defaults to `http://localhost:4000/health` (`VITE_API_BASE_URL` can override)
