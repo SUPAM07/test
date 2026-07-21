@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "@test/shared": "*"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
