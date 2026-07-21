@@ -1,52 +1,116 @@
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+import type {
+  AppConfigStatus,
+  AssistantAction,
+  AssistantPromptResponse,
+  UserProfile,
+} from '@test/shared'
+
+import { apiClient, assistantActionOptions } from './api/client'
 import './App.css'
 
-type HealthResponse = {
-  status: string
-  service: string
-  timestamp: string
-}
-
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'
-
 function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [status, setStatus] = useState<AppConfigStatus | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [assistantResponse, setAssistantResponse] = useState<AssistantPromptResponse | null>(null)
+
+  const [loadingBootstrap, setLoadingBootstrap] = useState(true)
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+
+  const [prompt, setPrompt] = useState('')
+  const [action, setAction] = useState<AssistantAction>('generate')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchHealth = async () => {
+    const loadInitialData = async () => {
       try {
-        setLoading(true)
-        const response = await fetch(`${apiBaseUrl}/health`)
-
-        if (!response.ok) {
-          throw new Error(`Health check failed with status ${response.status}`)
-        }
-
-        const data: HealthResponse = await response.json()
-        setHealth(data)
-        setError(null)
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        setError(message)
+        setLoadingBootstrap(true)
+        const [statusData, profileData] = await Promise.all([
+          apiClient.getStatus(),
+          apiClient.getProfile(),
+        ])
+        setStatus(statusData)
+        setProfile(profileData)
+        setBootstrapError(null)
+      } catch (error) {
+        setBootstrapError(error instanceof Error ? error.message : 'Failed to load app data')
       } finally {
-        setLoading(false)
+        setLoadingBootstrap(false)
       }
     }
 
-    void fetchHealth()
+    void loadInitialData()
   }, [])
+
+  const onSubmitPrompt = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    try {
+      setSubmitting(true)
+      setSubmitError(null)
+      const response = await apiClient.createAssistantResponse({ prompt, action })
+      setAssistantResponse(response)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to submit prompt')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <main>
-      <h1>Phase 1 Client Scaffold</h1>
-      <p>API base URL: {apiBaseUrl}</p>
-      {loading && <p>Checking backend health...</p>}
-      {!loading && error && <p>Backend error: {error}</p>}
-      {!loading && health && (
-        <pre>{JSON.stringify(health, null, 2)}</pre>
+      <h1>Phase 2 Migration Demo</h1>
+      <p>API base URL: {apiClient.getBaseUrl()}</p>
+
+      {loadingBootstrap && <p>Loading profile and config...</p>}
+      {!loadingBootstrap && bootstrapError && <p>Startup error: {bootstrapError}</p>}
+
+      {!loadingBootstrap && !bootstrapError && (
+        <>
+          <section>
+            <h2>Status</h2>
+            <pre>{JSON.stringify(status, null, 2)}</pre>
+          </section>
+
+          <section>
+            <h2>Profile</h2>
+            <pre>{JSON.stringify(profile, null, 2)}</pre>
+          </section>
+        </>
       )}
+
+      <section>
+        <h2>Assistant</h2>
+        <form onSubmit={onSubmitPrompt}>
+          <label htmlFor="prompt">Prompt</label>
+          <textarea
+            id="prompt"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            rows={4}
+            placeholder="Draft a launch post about Phase 2 migration"
+            required
+          />
+
+          <label htmlFor="action">Action</label>
+          <select id="action" value={action} onChange={(event) => setAction(event.target.value as AssistantAction)}>
+            {assistantActionOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
+          <button type="submit" disabled={submitting || prompt.trim().length === 0}>
+            {submitting ? 'Submitting...' : 'Submit'}
+          </button>
+        </form>
+
+        {submitError && <p>Assistant error: {submitError}</p>}
+        {assistantResponse && <pre>{JSON.stringify(assistantResponse, null, 2)}</pre>}
+      </section>
     </main>
   )
 }

@@ -62,6 +62,7 @@
     "typescript": "^5"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ]
 }

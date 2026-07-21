@@ -79,12 +79,18 @@ I build real-world SaaS apps, AI systems, automation platforms, and production-g
 
 ---
 
-## Phase 1 Migration Scaffold (Node+Express + React)
+## Phase 2 Migration (Split Architecture)
 
-The existing Next.js app remains intact. A new split architecture scaffold was added under:
+The existing Next.js app remains intact while the new split architecture is now functional:
 
 - `apps/server` - Node.js + Express + TypeScript API (`http://localhost:4000`)
 - `apps/client` - React + TypeScript (Vite) frontend (`http://localhost:5173`)
+- `packages/shared` - shared API/domain contracts used by server and client
+
+Architecture (concise):
+
+`apps/client` → `apps/server/api/v1/*` → service layer  
+`apps/client` + `apps/server` → shared contracts from `packages/shared`
 
 ### Run both new apps in development
 
@@ -113,9 +119,17 @@ npm run build:apps
 npm run build:all
 ```
 
+### New Phase 2 API endpoints
+
+- `GET /health` - base service health check
+- `GET /api/v1/status` - versioned config/status payload
+- `GET /api/v1/profile?includePreferences=true|false` - demo profile/session-style payload
+- `POST /api/v1/assistant/respond` - assistant interaction endpoint
+  - body: `{ "prompt": string, "action"?: "generate" | "rephrase" | "shorten" | "expand", "context"?: string }`
+
 ### Dev environment notes
 
 - Server default port: `4000` (`PORT` env var can override)
 - Client default port: `5173`
 - Server CORS origin defaults to `http://localhost:5173` (`CLIENT_ORIGIN` env var can override)
-- Client health check endpoint defaults to `http://localhost:4000/health` (`VITE_API_BASE_URL` can override)
+- Client API base URL defaults to `http://localhost:4000` (`VITE_API_BASE_URL` can override)
